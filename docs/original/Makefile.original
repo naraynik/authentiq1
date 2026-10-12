@@ -1,0 +1,118 @@
+# Makefile for AuthentiQ Development
+
+.PHONY: help install install-ai install-backend install-frontend install-blockchain
+.PHONY: train-models docker-up docker-down db-up db-down
+.PHONY: start-backend start-frontend start-blockchain dev-all clean
+
+help:
+	@echo "AuthentiQ Makefile Commands"
+	@echo "============================"
+	@echo "make install              - Install all dependencies"
+	@echo "make install-ai           - Install AI engine dependencies"
+	@echo "make install-backend      - Install backend dependencies"
+	@echo "make install-frontend     - Install frontend dependencies"
+	@echo "make install-blockchain   - Install blockchain dependencies"
+	@echo ""
+	@echo "make train-models         - Train AI models"
+	@echo ""
+	@echo "make db-up                - Start PostgreSQL (Docker)"
+	@echo "make db-down              - Stop PostgreSQL"
+	@echo ""
+	@echo "make start-backend        - Run FastAPI backend"
+	@echo "make start-frontend       - Run Next.js frontend"
+	@echo "make start-blockchain     - Run Hardhat node"
+	@echo ""
+	@echo "make docker-up            - Start all services (Docker Compose)"
+	@echo "make docker-down          - Stop all services"
+	@echo ""
+	@echo "make dev-all              - Start all services in development mode"
+	@echo "make clean                - Remove node_modules, venv, etc."
+
+# Installation targets
+install: install-ai install-backend install-frontend install-blockchain
+	@echo "✓ All dependencies installed"
+
+install-ai:
+	cd ai-engine && pip install -r requirements.txt && cd ..
+	@echo "✓ AI engine installed"
+
+install-backend:
+	cd backend && pip install -r requirements.txt && cd ..
+	@echo "✓ Backend installed"
+
+install-frontend:
+	cd frontend && npm install && cd ..
+	@echo "✓ Frontend installed"
+
+install-blockchain:
+	cd blockchain && npm install && cd ..
+	@echo "✓ Blockchain installed"
+
+# Training
+train-models:
+	cd ai-engine && python train.py && cd ..
+	@echo "✓ Models trained"
+
+# Database
+db-up:
+	docker-compose -f docker-compose.dev.yml up -d
+	@echo "✓ PostgreSQL running on localhost:5432"
+
+db-down:
+	docker-compose -f docker-compose.dev.yml down
+	@echo "✓ PostgreSQL stopped"
+
+# Services
+start-backend:
+	cd backend && uvicorn app.main:app --reload --port 8000
+
+start-frontend:
+	cd frontend && npm run dev
+
+start-blockchain:
+	cd blockchain && npm run node
+
+# Docker
+docker-up:
+	docker-compose -f docker-compose.full.yml up --build
+
+docker-down:
+	docker-compose -f docker-compose.full.yml down
+
+# Development
+dev-all: db-up
+	@echo "🚀 Starting full dev environment..."
+	@echo "Opening 3 terminals would be optimal. Running sequentially:"
+	@echo ""
+	@echo "1. Starting Hardhat..."
+	cd blockchain && npm run node &
+	@sleep 3
+	@echo ""
+	@echo "2. Deploying contracts..."
+	cd blockchain && npm run deploy:local
+	@echo ""
+	@echo "3. Starting Backend..."
+	cd backend && uvicorn app.main:app --reload &
+	@echo ""
+	@echo "4. Starting Frontend..."
+	cd frontend && npm run dev
+
+# Cleanup
+clean:
+	rm -rf node_modules backend/venv ai-engine/venv frontend/.next frontend/node_modules blockchain/node_modules
+	find . -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete
+	@echo "✓ Cleaned up"
+
+# Utility
+test-backend:
+	@echo "Testing backend endpoints..."
+	@curl -s -X GET http://localhost:8000/ | jq .
+	@echo ""
+	@curl -s -X GET http://localhost:8000/docs
+
+logs-backend:
+	docker-compose -f docker-compose.full.yml logs -f backend
+
+logs-db:
+	docker-compose -f docker-compose.full.yml logs -f postgres

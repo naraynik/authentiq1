@@ -1,0 +1,90 @@
+# Render Blueprint: deploys the AuthentiQ API, website and admin portal in one go.
+# Render dashboard -> New -> Blueprint -> pick this repository. Step-by-step: DEPLOY-RENDER.md
+#
+# Addresses (if Render adds a suffix because a name is taken, see DEPLOY-RENDER.md, "Different addresses"):
+#   API:          https://authentiq-kkw-api.onrender.com
+#   Website:      https://authentiq-kkw-web.onrender.com
+#   Admin portal: https://authentiq-kkw-admin.onrender.com
+
+services:
+  # FastAPI backend: accounts, products, scans, AI checks, Sepolia blockchain
+  - type: web
+    name: authentiq-kkw-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python -m app.seed_admin && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      # Asked for when you create the Blueprint:
+      - key: DATABASE_URL           # Neon connection string
+        sync: false
+      - key: ADMIN_EMAIL            # admin portal login
+        sync: false
+      - key: ADMIN_PASSWORD         # 8+ characters, upper, lower, number, symbol
+        sync: false
+      - key: BLOCKCHAIN_PRIVATE_KEY # test wallet key (0x + 64 hex), funded with Sepolia ETH
+        sync: false
+      # Sepolia public test network
+      - key: RPC_URL
+        value: https://ethereum-sepolia-rpc.publicnode.com
+      - key: CHAIN_ID
+        value: "11155111"
+      - key: EXPLORER_TX_URL
+        value: https://sepolia.etherscan.io/tx/
+      # Only the website and admin portal may call the API from a browser
+      - key: CORS_ORIGIN_REGEX
+        value: https://authentiq-kkw-(web|admin)(-[a-z0-9]+)?\.onrender\.com
+      # Render's disk is temporary; files and the contract address are kept in the database
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+      - key: CONTRACT_STATE_FILE
+        value: /tmp/contract.json
+
+  # Website (static)
+  - type: web
+    name: authentiq-kkw-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npx --yes bun@1.4.2 install --frozen-lockfile && npx --yes bun@1.4.2 run build:static
+    staticPublishPath: dist-static
+    envVars:
+      - key: VITE_API_URL
+        value: https://authentiq-kkw-api.onrender.com
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(self), geolocation=(self), microphone=()
+      - path: /media/*
+        name: Cache-Control
+        value: public, max-age=604800
+
+  # Admin portal (static)
+  - type: web
+    name: authentiq-kkw-admin
+    runtime: static
+    rootDir: admin
+    buildCommand: npx --yes bun@1.4.2 install --frozen-lockfile && npx --yes bun@1.4.2 run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://authentiq-kkw-api.onrender.com
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex

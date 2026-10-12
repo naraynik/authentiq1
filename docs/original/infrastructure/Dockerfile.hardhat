@@ -1,0 +1,20 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Copy dependency configs
+COPY blockchain/package.json blockchain/package-lock.json* ./
+
+# Install packages
+RUN npm ci
+
+# Copy contract sources and configs
+COPY blockchain/ .
+
+# Compile Solidity contracts
+RUN npx hardhat compile
+
+EXPOSE 8545
+
+# Start local hardhat blockchain network listening on all interfaces
+CMD ["npx", "hardhat", "node", "--hostname", "0.0.0.0"]

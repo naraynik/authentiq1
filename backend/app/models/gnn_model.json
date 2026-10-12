@@ -1,0 +1,12 @@
+{
+  "type": "GCN_Stub",
+  "status": "not_installed",
+  "requires": [
+    "torch",
+    "torch-geometric"
+  ],
+  "note": "Install torch dependencies for full GNN support",
+  "input_features": 3,
+  "hidden_dim": 32,
+  "output_classes": 2
+}

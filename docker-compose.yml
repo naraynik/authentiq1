@@ -1,0 +1,94 @@
+# AuthentiQ production stack.
+#   cp .env.example .env   # fill in the values
+#   docker compose up -d --build
+# Website: http://<server>/   Admin portal: http://<server>/admin/
+# For HTTPS (needed for the camera on phones) add:  -f docker-compose.https.yml
+
+name: authentiq
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: authentiq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: authentiq
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentiq -d authentiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Private Ethereum-compatible chain. State is kept in the chaindata volume,
+  # so registered products survive restarts. Only the backend can reach it.
+  chain:
+    image: trufflesuite/ganache:v7.9.2
+    restart: unless-stopped
+    command:
+      - --server.host=0.0.0.0
+      - --server.port=8545
+      - --chain.chainId=1337
+      - --chain.networkId=1337
+      - --database.dbPath=/chaindata
+      - --wallet.accounts=${BLOCKCHAIN_PRIVATE_KEY:?Set BLOCKCHAIN_PRIVATE_KEY in .env},1000000000000000000000000
+      - --logging.quiet
+    volumes:
+      - chaindata:/chaindata
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      chain:
+        condition: service_started
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "False"
+      DATABASE_URL: postgresql://authentiq:${POSTGRES_PASSWORD}@db:5432/authentiq
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      RPC_URL: http://chain:8545
+      CHAIN_ID: "1337"
+      BLOCKCHAIN_PRIVATE_KEY: ${BLOCKCHAIN_PRIVATE_KEY}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - backend_data:/data   # Aadhaar uploads + deployed contract address
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-80}:80"
+
+  # Optional database viewer. Start it with:  docker compose --profile tools up -d adminer
+  # Only reachable from the server itself (127.0.0.1). On a remote server use an SSH tunnel:
+  #   ssh -L 8081:127.0.0.1:8081 you@server   then open http://localhost:8081
+  # Log in with System "PostgreSQL", Server "db", User "authentiq", Database "authentiq"
+  # and the POSTGRES_PASSWORD from .env.
+  adminer:
+    image: adminer:4
+    profiles: ["tools"]
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+
+volumes:
+  pgdata:
+  chaindata:
+  backend_data:

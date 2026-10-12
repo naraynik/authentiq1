@@ -1,0 +1,22 @@
+# Adds automatic HTTPS with Caddy (Let's Encrypt). Point your domain's DNS at the
+# server first, set DOMAIN in .env, then:
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
+services:
+  web:
+    ports: !reset []
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMAIN:?Set DOMAIN in .env} --to web:80
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

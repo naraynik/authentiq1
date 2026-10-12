@@ -1,0 +1,24 @@
+# Same as requirements.txt minus PyTorch / PyTorch Geometric, for small cloud servers
+# (e.g. Render free, 512 MB RAM). The GNN model is then skipped; Random Forest and all
+# the rule checks still run. Use requirements.txt on servers with 2 GB+ RAM.
+fastapi>=0.118.0
+uvicorn>=0.37.0
+sqlalchemy>=2.0.31,<2.1  # 2.1 switched postgresql:// to the psycopg3 driver; we ship psycopg2
+alembic>=1.13.0
+pydantic>=2.7.4
+pydantic-settings>=2.3.4
+python-dotenv>=1.0.1
+psycopg2-binary>=2.9.9
+passlib>=1.7.4
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+python-multipart>=0.0.9
+email-validator>=2.0.0
+pytest>=8.0.0
+
+httpx>=0.28.0
+joblib>=1.4.2
+scikit-learn>=1.5.0,<1.6  # models were pickled with 1.5.0
+pandas>=2.2.2
+numpy>=1.26.4
+web3>=7.0.0  # needed by app/services/blockchain_service.py (uses signed_tx.raw_transaction)

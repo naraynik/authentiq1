@@ -1,0 +1,22 @@
+{
+  "name": "authentiq-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain module for AuthentiQ AI-Powered Anti-Counterfeit Product Verification System",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "chain:start": "npx ganache --db ./chain_data --port 8545 --chain.chainId 1337 --chain.networkId 1337 --mnemonic \"authentiq persistent blockchain development seed phrase for local dev node 2026\"",
+    "deploy:ganache": "npx hardhat run scripts/deploy.js --network ganache"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "ganache": "^7.9.2",
+    "hardhat": "^2.22.3"
+  }
+}

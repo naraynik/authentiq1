@@ -1,0 +1,31 @@
+# secrets and local config
+.env
+.env.local
+*.env.local
+
+# uploaded verification documents (Aadhaar etc.): never commit
+backend/uploads/
+backend/app/uploads/*
+!backend/app/uploads/.gitkeep
+
+# databases and chain state
+*.db
+blockchain/chain_data/
+
+# build output and dependencies
+node_modules/
+__pycache__/
+.pytest_cache/
+frontend/.output/
+frontend/.tanstack/
+frontend/.wrangler/
+frontend/dist-single/
+frontend/scripts/.single/
+admin/dist/
+backend/data/
+blockchain/artifacts/
+blockchain/cache/
+
+ADMIN-LOGIN.txt
+frontend/dist-static/
+frontend/scripts/static/
