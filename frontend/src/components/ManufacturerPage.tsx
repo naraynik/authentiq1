@@ -146,7 +146,7 @@ function Auth({ onSignIn }: { onSignIn: (session: Session) => void }) {
 
         {PREVIEW && !isRegister && (
           <div className="mt-5 rounded-2xl bg-brand-soft p-4 text-sm text-ink">
-            <p className="font-semibold">Demo accounts (sample data)</p>
+            <p className="font-semibold">Demo accounts</p>
             <p className="mt-1">
               Manufacturer: <code>{DEMO_LOGINS.manufacturer.email}</code> /{" "}
               <code>{DEMO_LOGINS.manufacturer.password}</code>

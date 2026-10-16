@@ -1,7 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./Page";
-import { PREVIEW } from "../../src/lib/preview";
 
 /** Shows any runtime error on the page itself instead of a blank screen. */
 function show(title: string, detail: string) {
@@ -45,33 +44,8 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   }
 }
 
-/** Reminds whoever opens a preview build that nothing here reaches a real server. */
-function PreviewBadge() {
-  if (!PREVIEW) return null;
-  return (
-    <div
-      title="This copy of the website runs on sample data inside your browser. Nothing is sent to a server."
-      style={{
-        position: "fixed",
-        left: 12,
-        bottom: 12,
-        zIndex: 9999,
-        padding: "6px 12px",
-        borderRadius: 999,
-        background: "#0b1b3a",
-        color: "#d4a017",
-        font: "600 12px/1.4 'Plus Jakarta Sans', sans-serif",
-        boxShadow: "0 4px 14px rgba(0,0,0,.2)",
-      }}
-    >
-      Preview · sample data
-    </div>
-  );
-}
-
 createRoot(document.getElementById("root")!).render(
   <Boundary>
     <App />
-    <PreviewBadge />
   </Boundary>,
 );
