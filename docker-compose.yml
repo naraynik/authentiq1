@@ -1,7 +1,7 @@
 # AuthentiQ production stack.
 #   cp .env.example .env   # fill in the values
 #   docker compose up -d --build
-# Website: http://<server>/   Admin portal: http://<server>/admin/
+# Website: http://<server>/   (team console: Manufacturers -> Log in with ADMIN_EMAIL / ADMIN_PASSWORD)
 # For HTTPS (needed for the camera on phones) add:  -f docker-compose.https.yml
 
 name: authentiq

@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from app.database.database import get_db
 from app.models.issue import Issue
 from app.models.product import Product
 from app.models.user import User
+from app.services.audit import create_audit_log
 
 router = APIRouter(tags=["Customer Issues"])
 
@@ -75,6 +76,7 @@ class IssueStatusUpdate(BaseModel):
 async def update_issue_status(
     issue_id: int,
     payload: IssueStatusUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
@@ -84,6 +86,12 @@ async def update_issue_status(
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
+    old_status = issue.status
     issue.status = new_status
+    create_audit_log(
+        db=db, action=f"ISSUE_{new_status}", entity_type="ISSUE", entity_id=str(issue.id),
+        user_id=current_user.id, request=request,
+        description=f"Customer issue #{issue.id} (product {issue.product_id}) changed from {old_status} to {new_status} by Admin '{current_user.email}'.",
+    )
     db.commit()
     return _issue_dict(issue)

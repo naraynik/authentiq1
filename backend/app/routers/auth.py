@@ -139,6 +139,13 @@ async def register_manufacturer(
         verification_status="PENDING"
     )
     db.add(manufacturer)
+    db.flush()
+    from app.services.audit import create_audit_log
+    create_audit_log(
+        db=db, action="MANUFACTURER_REGISTERED", entity_type="MANUFACTURER", entity_id=str(manufacturer.id),
+        user_id=user.id,
+        description=f"'{clean_company_name}' (GSTIN {clean_gstin}) registered and is waiting for verification.",
+    )
     db.commit()
     db.refresh(manufacturer)
 

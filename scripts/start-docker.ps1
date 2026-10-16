@@ -44,12 +44,12 @@ Say "[OK] Docker is running" Green
 # 2. First run: create .env with fresh secrets
 $port = 8080
 if (-not (Test-Path ".env")) {
-    $adminPassword = "Aq9-" + (RandomHex 6) + "!X"
+    $adminPassword = "AdminPassword123!"   # the team's chosen login; change it in .env any time
     $lines = @(
         "# Created by scripts/start-docker.ps1 on $(Get-Date -Format 'yyyy-MM-dd HH:mm'). Keep this file private.",
         "POSTGRES_PASSWORD=$(RandomHex 16)",
         "SECRET_KEY=$(RandomHex 32)",
-        "ADMIN_EMAIL=admin@authentiq.local",
+        "ADMIN_EMAIL=admin@authentiq.com",
         "ADMIN_PASSWORD=$adminPassword",
         "BLOCKCHAIN_PRIVATE_KEY=0x$(RandomHex 32)",
         "WEB_PORT=$port",
@@ -57,7 +57,7 @@ if (-not (Test-Path ".env")) {
     )
     # UTF-8 without BOM, which Docker Compose reads correctly
     [System.IO.File]::WriteAllText((Join-Path (Get-Location) ".env"), ($lines -join "`n") + "`n", (New-Object System.Text.UTF8Encoding $false))
-    $login = "AuthentiQ admin portal login`r`n  Address:  http://localhost:$port/admin/`r`n  Email:    admin@authentiq.local`r`n  Password: $adminPassword`r`n"
+    $login = "AuthentiQ team console`r`n  Open http://localhost:$port/#/manufacturer -> Log in`r`n  Email:    admin@authentiq.com`r`n  Password: $adminPassword`r`n"
     [System.IO.File]::WriteAllText((Join-Path (Get-Location) "ADMIN-LOGIN.txt"), $login)
     Say "[OK] Created .env with new passwords (admin login saved in ADMIN-LOGIN.txt)" Green
 } else {
@@ -93,13 +93,13 @@ if (-not $ready) {
 Say "==============================================" Green
 Say " AuthentiQ is running" Green
 Say "   Website:       $base/" White
-Say "   Admin portal:  $base/admin/   (login in ADMIN-LOGIN.txt)" White
+Say "   Team console:  $base/#/manufacturer -> Log in (login in ADMIN-LOGIN.txt)" White
 Say "   API docs:      $base/api/docs" White
 Say "   Database:      http://localhost:8081  (System PostgreSQL, Server db, User authentiq," White
 Say "                  Password = POSTGRES_PASSWORD in .env, Database authentiq)" White
 Say " Stop it with STOP-AUTHENTIQ.bat (your data is kept)." White
 Say "==============================================" Green
 Start-Process "$base/"
-Start-Process "$base/admin/"
+Start-Process "$base/#/manufacturer"
 if (Test-Path "ADMIN-LOGIN.txt") { Start-Process notepad.exe "ADMIN-LOGIN.txt" }
 Read-Host "Press Enter to close this window (AuthentiQ keeps running)"

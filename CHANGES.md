@@ -1,5 +1,12 @@
 # Changes
 
+## Version 5: team console behind the normal login
+
+- **No separate admin app or link any more.** Logging in on **Manufacturers → Log in** with the admin account (`ADMIN_EMAIL`, e.g. admin@authentiq.com) opens the team console in the same place; manufacturers still get their own dashboard. The `admin/` app and its Render service are gone.
+- Console: stat cards (registered, pending with a "Needs attention" badge, approved, suspended); manufacturer table with filter tabs (All, Pending, Approved, Rejected, Suspended), company, GSTIN, contact email, registered date; **View document** (image or PDF, with download); **Approve**, **Reject** (popup asking for the reason the manufacturer will see), **Suspend** / **Reactivate**; **Customer issues**; **Audit log**; blockchain status with the wallet's test-ETH balance.
+- Audit log now also records new manufacturer registrations, products written to the blockchain and customer-issue updates, and shows who did each action (`user_email`).
+- Windows launcher: admin login is admin@authentiq.com / the password in `ADMIN-LOGIN.txt`.
+
 ## Version 4: free cloud deployment (Render + Neon + Sepolia)
 
 Step-by-step guide: `DEPLOY-RENDER.md`. Rehearsed here with the exact Render start command and settings, a fresh PostgreSQL database, a chain that behaves like Sepolia (chain ID 11155111, a block every 12 seconds) and the website and admin portal built with Render's build commands. The full flow passed, including a restart with a wiped disk. Not tried on the real Render, Neon or Sepolia from here: those need your accounts.

@@ -1,10 +1,10 @@
-# Render Blueprint: deploys the AuthentiQ API, website and admin portal in one go.
+# Render Blueprint: deploys the AuthentiQ API and website in one go.
 # Render dashboard -> New -> Blueprint -> pick this repository. Step-by-step: DEPLOY-RENDER.md
 #
 # Addresses (if Render adds a suffix because a name is taken, see DEPLOY-RENDER.md, "Different addresses"):
 #   API:          https://authentiq-kkw-api.onrender.com
 #   Website:      https://authentiq-kkw-web.onrender.com
-#   Admin portal: https://authentiq-kkw-admin.onrender.com
+#   Admin console: log in at Website -> Manufacturers with the ADMIN_EMAIL / ADMIN_PASSWORD account
 
 services:
   # FastAPI backend: accounts, products, scans, AI checks, Sepolia blockchain
@@ -28,7 +28,7 @@ services:
       # Asked for when you create the Blueprint:
       - key: DATABASE_URL           # Neon connection string
         sync: false
-      - key: ADMIN_EMAIL            # admin portal login
+      - key: ADMIN_EMAIL            # team console login, e.g. admin@authentiq.com
         sync: false
       - key: ADMIN_PASSWORD         # 8+ characters, upper, lower, number, symbol
         sync: false
@@ -41,9 +41,9 @@ services:
         value: "11155111"
       - key: EXPLORER_TX_URL
         value: https://sepolia.etherscan.io/tx/
-      # Only the website and admin portal may call the API from a browser
+      # Only the website may call the API from a browser
       - key: CORS_ORIGIN_REGEX
-        value: https://authentiq-kkw-(web|admin)(-[a-z0-9]+)?\.onrender\.com
+        value: https://authentiq-kkw-web(-[a-z0-9]+)?\.onrender\.com
       # Render's disk is temporary; files and the contract address are kept in the database
       - key: UPLOAD_DIR
         value: /tmp/uploads
@@ -70,21 +70,3 @@ services:
       - path: /media/*
         name: Cache-Control
         value: public, max-age=604800
-
-  # Admin portal (static)
-  - type: web
-    name: authentiq-kkw-admin
-    runtime: static
-    rootDir: admin
-    buildCommand: npx --yes bun@1.4.2 install --frozen-lockfile && npx --yes bun@1.4.2 run build
-    staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://authentiq-kkw-api.onrender.com
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Robots-Tag
-        value: noindex

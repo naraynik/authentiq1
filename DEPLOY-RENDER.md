@@ -1,11 +1,10 @@
 # Put AuthentiQ online (free): Render + Neon + Sepolia
 
-When you finish, you will have three public `https://` addresses:
+When you finish, you will have two public `https://` addresses:
 
 | What | Address |
 |---|---|
 | Website | https://authentiq-kkw-web.onrender.com |
-| Admin portal | https://authentiq-kkw-admin.onrender.com |
 | API (+ docs at `/api/docs`) | https://authentiq-kkw-api.onrender.com |
 
 Everything is free. You need about 45 minutes, a Google account and an email address. No command line.
@@ -15,7 +14,7 @@ Everything is free. You need about 45 minutes, a Google account and an email add
 | **GitHub** | Holds the project code. Render builds from it. |
 | **Neon** | The PostgreSQL database |
 | **MetaMask** + a **Sepolia faucet** | A test wallet with free test ETH that pays for writing products to the blockchain |
-| **Render** | Runs the API, website and admin portal |
+| **Render** | Runs the API and the website |
 
 ---
 
@@ -59,14 +58,14 @@ The API writes each product to the Sepolia test blockchain. That costs "gas", pa
 
 1. Go to **https://render.com** → **Get Started** → **Sign up with GitHub**, and allow Render to see your `authentiq` repository.
 2. Click **New** (top right) → **Blueprint**.
-3. Choose the `authentiq` repository → **Connect**. Render reads `render.yaml` and lists three services: `authentiq-kkw-api`, `authentiq-kkw-web`, `authentiq-kkw-admin`.
+3. Choose the `authentiq` repository → **Connect**. Render reads `render.yaml` and lists two services: `authentiq-kkw-api` and `authentiq-kkw-web`.
 4. It asks for four values:
 
    | Name | What to paste |
    |---|---|
    | `DATABASE_URL` | the Neon connection string (step 2) |
-   | `ADMIN_EMAIL` | the email you will use to log in to the admin portal |
-   | `ADMIN_PASSWORD` | a new password: 8+ characters with upper case, lower case, a number and a symbol |
+   | `ADMIN_EMAIL` | the team's login, e.g. `admin@authentiq.com` |
+   | `ADMIN_PASSWORD` | its password: 8+ characters with upper case, lower case, a number and a symbol |
    | `BLOCKCHAIN_PRIVATE_KEY` | the MetaMask private key (step 3) |
 
 5. Click **Apply** (or **Deploy Blueprint**). Render builds all three. The API takes 5–10 minutes the first time.
@@ -74,7 +73,7 @@ The API writes each product to the Sepolia test blockchain. That costs "gas", pa
    **https://authentiq-kkw-api.onrender.com/api/health/blockchain**
    It should say `"contract_accessible": true` and `"chain_id": 11155111`. On its very first start the API deploys the smart contract to Sepolia (about 30 seconds). Its address is saved in the database, so it is not deployed again.
 
-Done. Open the website and the admin portal. Try the flow in README.md, "Try the whole flow". After registering a product, its scan report has a link **See this record on the public blockchain (Etherscan)**.
+Done. Open the website. To open the team console, go to **Manufacturers → Log in** and use `ADMIN_EMAIL` / `ADMIN_PASSWORD`; there is no separate admin page or link. Try the flow in README.md, "Try the whole flow". After registering a product, its scan report has a link **See this record on the public blockchain (Etherscan)**.
 
 ---
 
@@ -94,9 +93,9 @@ Done. Open the website and the admin portal. Try the flow in README.md, "Try the
 Web addresses on Render are shared by everyone. If someone already uses `authentiq-kkw-api`, Render adds a few letters (for example `authentiq-kkw-api-x7k2.onrender.com`). Then:
 
 1. Copy the API's real address from its page on Render.
-2. In **authentiq-kkw-web** and **authentiq-kkw-admin**: **Environment** → set `VITE_API_URL` to that address → **Save, rebuild and deploy**.
+2. In **authentiq-kkw-web**: **Environment** → set `VITE_API_URL` to that address → **Save, rebuild and deploy**.
 
-The website and admin portal may get letters added too; the API already accepts `authentiq-kkw-web…` and `authentiq-kkw-admin…` with any suffix. If you rename the services, also update `CORS_ORIGIN_REGEX` on the API.
+The website may get letters added too; the API already accepts `authentiq-kkw-web…` with any suffix. If you rename the services, also update `CORS_ORIGIN_REGEX` on the API.
 
 ## Troubleshooting
 
@@ -106,4 +105,4 @@ The website and admin portal may get letters added too; the API already accepts 
 | API logs: `Refusing to start in production with default …` | Set `ADMIN_PASSWORD` in the API's **Environment** tab. |
 | API logs: `could not translate host name` or `password authentication failed` | `DATABASE_URL` is wrong; copy it again from Neon. |
 | `/api/health/blockchain` shows `"contract_accessible": false` | The wallet has no test ETH, or the private key is wrong. Fund it (step 3.4), then on Render: API → **Manual Deploy** → **Restart service**. |
-| Admin login says "This account is not an admin account" | Use the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from Render, not a manufacturer account. |
+| Logging in with the admin email opens the manufacturer screens, or fails | Use exactly the `ADMIN_EMAIL` / `ADMIN_PASSWORD` set on Render (the API resets the admin password to that value on every start). |

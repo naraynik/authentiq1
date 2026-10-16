@@ -5,6 +5,7 @@
  * http://127.0.0.1:8000, which is where `uvicorn app.main:app` listens.
  */
 import type { Product, Scan } from "@/lib/samples";
+import { PREVIEW, isPreviewError, previewRequest } from "@/lib/preview";
 
 // Written as `import.meta.env.VITE_API_URL` exactly, so both Vite and the single-file
 // build (scripts/build-single-html.py, via --define) can replace it at build time.
@@ -43,10 +44,18 @@ function errorText(body: unknown, status: number): string {
   return `The server answered with an error (${status}).`;
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   opts: { method?: string; json?: unknown; form?: FormData; token?: string } = {},
 ): Promise<T> {
+  if (PREVIEW) {
+    try {
+      return await previewRequest<T>(path, opts);
+    } catch (e) {
+      if (isPreviewError(e)) throw new ApiError(e.message, e.status);
+      throw e;
+    }
+  }
   const headers: Record<string, string> = {};
   if (opts.json !== undefined) headers["Content-Type"] = "application/json";
   if (opts.token) headers["Authorization"] = `Bearer ${opts.token}`;
@@ -243,13 +252,19 @@ export async function registerManufacturer(form: FormData) {
   );
 }
 
-export async function login(email: string, password: string) {
+export type Role = "MANUFACTURER" | "ADMIN";
+
+/** One login for everyone: the role decides which dashboard opens. */
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ token: string; role: Role }> {
   const r = await request<{ access_token: string; role: string }>("/auth/login", {
     json: { email, password },
   });
-  if (r.role !== "MANUFACTURER")
-    throw new ApiError("This page is for manufacturer accounts. Admins use the admin portal.", 403);
-  return r.access_token;
+  if (r.role !== "MANUFACTURER" && r.role !== "ADMIN")
+    throw new ApiError("This account cannot sign in here.", 403);
+  return { token: r.access_token, role: r.role };
 }
 
 export const getProfile = (token: string) => request<Profile>("/manufacturer/profile", { token });

@@ -21,7 +21,6 @@ frontend/.tanstack/
 frontend/.wrangler/
 frontend/dist-single/
 frontend/scripts/.single/
-admin/dist/
 backend/data/
 blockchain/artifacts/
 blockchain/cache/

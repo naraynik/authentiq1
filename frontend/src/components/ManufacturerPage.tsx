@@ -22,24 +22,29 @@ import {
   registerProduct,
   type Place,
   type Profile,
+  type Role,
 } from "@/lib/api";
 import { card, field, pill, pillGhost } from "@/components/Shell";
+import TeamConsole from "@/components/TeamConsole";
+import { DEMO_LOGINS, PREVIEW } from "@/lib/preview";
 
 type Stage = "register" | "login";
 
-/** The login token is kept in this browser so a page reload does not log you out. */
-const TOKEN_KEY = "authentiq.manufacturerToken";
-const readToken = () => {
+/** The login is kept in this browser so a page reload does not log you out. */
+type Session = { token: string; role: Role };
+const SESSION_KEY = "authentiq.session";
+const readSession = (): Session | null => {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null") as Session | null;
+    return s?.token && s.role ? s : null;
   } catch {
     return null;
   }
 };
-const writeToken = (t: string | null) => {
+const writeSession = (s: Session | null) => {
   try {
-    if (t) localStorage.setItem(TOKEN_KEY, t);
-    else localStorage.removeItem(TOKEN_KEY);
+    if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    else localStorage.removeItem(SESSION_KEY);
   } catch {
     /* storage blocked: the session just lasts until reload */
   }
@@ -79,7 +84,7 @@ function Steps({ current }: { current: number }) {
   );
 }
 
-function Auth({ onToken }: { onToken: (token: string) => void }) {
+function Auth({ onSignIn }: { onSignIn: (session: Session) => void }) {
   const [stage, setStage] = useState<Stage>("register");
   const [file, setFile] = useState("");
   const [busy, setBusy] = useState(false);
@@ -99,7 +104,7 @@ function Auth({ onToken }: { onToken: (token: string) => void }) {
         await registerManufacturer(data);
       }
       // Log straight in after registering, so the pending screen can check the status.
-      onToken(await login(email, password));
+      onSignIn(await login(email, password));
     } catch (err) {
       setError(message(err));
     } finally {
@@ -138,6 +143,20 @@ function Auth({ onToken }: { onToken: (token: string) => void }) {
             </button>
           ))}
         </div>
+
+        {PREVIEW && !isRegister && (
+          <div className="mt-5 rounded-2xl bg-brand-soft p-4 text-sm text-ink">
+            <p className="font-semibold">Demo accounts (sample data)</p>
+            <p className="mt-1">
+              Manufacturer: <code>{DEMO_LOGINS.manufacturer.email}</code> /{" "}
+              <code>{DEMO_LOGINS.manufacturer.password}</code>
+            </p>
+            <p>
+              AuthentiQ team: <code>{DEMO_LOGINS.team.email}</code> /{" "}
+              <code>{DEMO_LOGINS.team.password}</code>
+            </p>
+          </div>
+        )}
 
         <form onSubmit={(e) => void submit(e)} className="mt-7 grid gap-4">
           {isRegister && (
@@ -771,24 +790,25 @@ function Dashboard({
 }
 
 export default function ManufacturerPage() {
-  const [token, setToken] = useState<string | null>(readToken);
+  const [session, setSession] = useState<Session | null>(readSession);
+  const token = session?.token ?? null;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
 
-  const signIn = (t: string) => {
-    writeToken(t);
-    setToken(t);
+  const signIn = (s: Session) => {
+    writeSession(s);
+    setSession(s);
   };
-  const logout = () => {
-    writeToken(null);
-    setToken(null);
+  const logout = useCallback(() => {
+    writeSession(null);
+    setSession(null);
     setProfile(null);
     setError("");
-  };
+  }, []);
 
   const check = useCallback(() => {
-    if (!token) return;
+    if (!token || session?.role !== "MANUFACTURER") return;
     setChecking(true);
     setError("");
     getProfile(token)
@@ -798,7 +818,7 @@ export default function ManufacturerPage() {
         else setError(message(err));
       })
       .finally(() => setChecking(false));
-  }, [token]);
+  }, [token, session?.role, logout]);
   useEffect(check, [check]);
 
   const status = profile?.verification_status;
@@ -806,7 +826,9 @@ export default function ManufacturerPage() {
   return (
     <div className="px-5 pt-32 pb-24">
       {!token ? (
-        <Auth onToken={signIn} />
+        <Auth onSignIn={signIn} />
+      ) : session?.role === "ADMIN" ? (
+        <TeamConsole token={token} onLogout={logout} />
       ) : status === "APPROVED" ? (
         <Dashboard token={token} profile={profile!} onLogout={logout} />
       ) : !profile ? (

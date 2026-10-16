@@ -1,4 +1,16 @@
-import type { ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+/** Lets a page inside the Shell hide the site navigation (the team console has no use for it). */
+const HideNav = createContext<(hidden: boolean) => void>(() => {});
+
+/** Hides the Home / Scan / Manufacturers links while the calling component is on screen. */
+export function useHideSiteNav() {
+  const setHidden = useContext(HideNav);
+  useEffect(() => {
+    setHidden(true);
+    return () => setHidden(false);
+  }, [setHidden]);
+}
 
 export const pill =
   "inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#0b1b3a] to-[#1e3a6e] px-7 py-3 text-[15px] font-semibold text-white aq-btn";
@@ -59,6 +71,7 @@ export function Logo({ dark = false }: { dark?: boolean }) {
 
 /** Header and footer for the scan and manufacturer pages. */
 export function Shell({ page, children }: { page: "scan" | "manufacturer"; children: ReactNode }) {
+  const [navHidden, setNavHidden] = useState(false);
   const link = (href: string, text: string, active: boolean) => (
     <a
       href={href}
@@ -72,24 +85,34 @@ export function Shell({ page, children }: { page: "scan" | "manufacturer"; child
     <div className="min-h-screen bg-gradient-to-b from-brand-soft via-surface to-surface">
       <header className="fixed inset-x-0 top-0 z-50">
         <div className="mx-auto flex h-24 max-w-[1180px] items-center justify-between gap-3 px-5">
-          <a
-            href="#/"
-            aria-label="AuthentiQ home"
-            className="rounded-full bg-surface/85 px-4 py-2 backdrop-blur"
-          >
-            <Logo />
-          </a>
-          <nav
-            aria-label="Main"
-            className="flex items-center rounded-full bg-surface px-3 shadow-[0_5px_14px_rgba(11,27,58,0.08)]"
-          >
-            <span className="hidden sm:block">{link("#/", "Home", false)}</span>
-            {link("#/scan", "Scan", page === "scan")}
-            {link("#/manufacturer", "Manufacturers", page === "manufacturer")}
-          </nav>
+          {navHidden ? (
+            <span className="rounded-full bg-surface/85 px-4 py-2 backdrop-blur">
+              <Logo />
+            </span>
+          ) : (
+            <a
+              href="#/"
+              aria-label="AuthentiQ home"
+              className="rounded-full bg-surface/85 px-4 py-2 backdrop-blur"
+            >
+              <Logo />
+            </a>
+          )}
+          {!navHidden && (
+            <nav
+              aria-label="Main"
+              className="flex items-center rounded-full bg-surface px-3 shadow-[0_5px_14px_rgba(11,27,58,0.08)]"
+            >
+              <span className="hidden sm:block">{link("#/", "Home", false)}</span>
+              {link("#/scan", "Scan", page === "scan")}
+              {link("#/manufacturer", "Manufacturers", page === "manufacturer")}
+            </nav>
+          )}
         </div>
       </header>
-      <main>{children}</main>
+      <main>
+        <HideNav.Provider value={setNavHidden}>{children}</HideNav.Provider>
+      </main>
       <footer className="border-t border-line px-5 py-8 text-center text-sm text-subtle">
         © AuthentiQ ·{" "}
         <a href="#contact" className="underline hover:text-brand">

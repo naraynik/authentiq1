@@ -31,6 +31,8 @@ subprocess.run(
     "--define process.env.NODE_ENV='\"production\"' "
     # The backend address baked into the file (set VITE_API_URL to change it).
     f"--define import.meta.env.VITE_API_URL='{json.dumps(os.environ.get('VITE_API_URL', 'http://127.0.0.1:8000'))}' "
+    # VITE_PREVIEW=1: no backend needed, a pretend one runs in the browser (src/lib/preview.ts).
+    f"--define import.meta.env.VITE_PREVIEW='{json.dumps(os.environ.get('VITE_PREVIEW', ''))}' "
     "--outfile scripts/.single/app.js",
     shell=True,
     check=True,

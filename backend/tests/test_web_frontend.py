@@ -141,3 +141,18 @@ def test_aadhaar_document_is_served_from_the_database(client: TestClient):
     assert res.status_code == 200
     assert res.headers["content-type"] == "application/pdf"
     assert res.content.startswith(b"%PDF")
+
+
+def test_audit_log_shows_who_did_what(client: TestClient):
+    from app.core.config import settings
+
+    register_and_approve_manufacturer(client, "web6@example.com", "27AAACA1235A1Z9")
+    admin = get_admin_token(client)
+    issue = client.post("/api/issues", json={"product_id": "X-1", "message": "Looks fake"}).json()
+    client.put(f"/api/admin/issues/{issue['id']}/status", json={"status": "REVIEWED"},
+               headers={"Authorization": f"Bearer {admin}"})
+    logs = client.get("/api/admin/audit-logs", headers={"Authorization": f"Bearer {admin}"}).json()
+    actions = {log["action"]: log for log in logs}
+    assert {"MANUFACTURER_REGISTERED", "MANUFACTURER_APPROVED", "ISSUE_REVIEWED"} <= set(actions)
+    assert actions["MANUFACTURER_APPROVED"]["user_email"] == settings.ADMIN_EMAIL
+    assert actions["MANUFACTURER_REGISTERED"]["user_email"] == "web6@example.com"

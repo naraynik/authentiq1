@@ -53,11 +53,14 @@ async def list_audit_logs(
     """
     from app.models.audit import AuditLog
     logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit).all()
+    user_ids = {log.user_id for log in logs if log.user_id}
+    emails = dict(db.query(User.id, User.email).filter(User.id.in_(user_ids)).all()) if user_ids else {}
     results = []
     for log in logs:
         results.append({
             "id": log.id,
             "user_id": log.user_id,
+            "user_email": emails.get(log.user_id),
             "action": log.action,
             "entity_type": log.entity_type,
             "entity_id": log.entity_id,

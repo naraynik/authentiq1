@@ -190,8 +190,10 @@ def test_15_audit_logs_created_for_verification(client):
 
     db = TestingSessionLocal()
     logs = db.query(AuditLog).filter(AuditLog.entity_type == "MANUFACTURER", AuditLog.entity_id == str(mfr_id)).all()
-    assert len(logs) >= 1
-    assert logs[0].action == "MANUFACTURER_APPROVED"
+    actions = [log.action for log in logs]
+    # Registration is logged too (version 5), then the approval
+    assert "MANUFACTURER_REGISTERED" in actions
+    assert "MANUFACTURER_APPROVED" in actions
     db.close()
 
 # Test 16: Verification document access is protected

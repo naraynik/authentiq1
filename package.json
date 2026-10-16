@@ -6,7 +6,6 @@
   "scripts": {
     "dev:frontend": "cd frontend && bun run dev --port 3000",
     "build:frontend": "cd frontend && bun run build",
-    "dev:admin": "cd admin && bun run dev",
     "compile:contracts": "npm run compile --prefix blockchain",
     "chain:start": "npm run chain:start --prefix blockchain",
     "deploy:contracts": "npm run deploy:ganache --prefix blockchain"

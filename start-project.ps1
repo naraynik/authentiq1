@@ -1,5 +1,5 @@
 # AuthentiQ Safe Project Startup Script (Windows PowerShell)
-# Launches PostgreSQL, Persistent Ganache Node, Smart Contract Check, FastAPI, the AuthentiQ website and the admin portal
+# Launches PostgreSQL, Persistent Ganache Node, Smart Contract Check, FastAPI and the AuthentiQ website
 
 $ErrorActionPreference = "Continue"
 
@@ -10,7 +10,7 @@ Write-Host "====================================================" -ForegroundCol
 $WorkspaceRoot = (Resolve-Path "$PSScriptRoot\..").ProviderPath
 
 # 1. Check PostgreSQL Container
-Write-Host "[1/6] Checking PostgreSQL Database container..." -ForegroundColor Yellow
+Write-Host "[1/5] Checking PostgreSQL Database container..." -ForegroundColor Yellow
 $pgRunning = $false
 try {
     $pgStatus = (docker inspect -f '{{.State.Running}}' authentiq-postgres-dev 2>$null)
@@ -29,7 +29,7 @@ if (-not $pgRunning) {
 Write-Host "[OK] PostgreSQL container is RUNNING." -ForegroundColor Green
 
 # 2. Check Persistent Blockchain RPC Node
-Write-Host "[2/6] Checking Persistent Blockchain Node (RPC http://127.0.0.1:8545)..." -ForegroundColor Yellow
+Write-Host "[2/5] Checking Persistent Blockchain Node (RPC http://127.0.0.1:8545)..." -ForegroundColor Yellow
 $rpcOnline = $false
 try {
     $bodyJson = '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}'
@@ -68,7 +68,7 @@ if ($rpcOnline) {
 }
 
 # 3. Check Smart Contract Bytecode / Deploy if missing
-Write-Host "[3/6] Verifying Smart Contract Bytecode on Persistent Blockchain..." -ForegroundColor Yellow
+Write-Host "[3/5] Verifying Smart Contract Bytecode on Persistent Blockchain..." -ForegroundColor Yellow
 $blockchainDir = Join-Path $PSScriptRoot "blockchain"
 if (-not (Test-Path $blockchainDir)) {
     $blockchainDir = Join-Path $WorkspaceRoot "AuthentiQ-Blockchain-main"
@@ -83,7 +83,7 @@ try {
 }
 
 # 4. Check FastAPI Backend
-Write-Host "[4/6] Checking FastAPI Backend Gateway (http://127.0.0.1:8000)..." -ForegroundColor Yellow
+Write-Host "[4/5] Checking FastAPI Backend Gateway (http://127.0.0.1:8000)..." -ForegroundColor Yellow
 $backendOnline = $false
 try {
     $bRes = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/health" -Method Get -ErrorAction Stop
@@ -99,7 +99,7 @@ if (-not $backendOnline) {
 Write-Host "[OK] FastAPI Backend is RUNNING at http://127.0.0.1:8000" -ForegroundColor Green
 
 # 5. AuthentiQ website (frontend/, Vite + React, needs Bun: https://bun.sh)
-Write-Host "[5/6] Checking AuthentiQ website (http://localhost:3000)..." -ForegroundColor Yellow
+Write-Host "[5/5] Checking AuthentiQ website (http://localhost:3000)..." -ForegroundColor Yellow
 $frontendOnline = $false
 try {
     $fRes = Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing -ErrorAction Stop
@@ -118,30 +118,10 @@ if (-not $frontendOnline) {
 }
 Write-Host "[OK] AuthentiQ website is RUNNING at http://localhost:3000" -ForegroundColor Green
 
-# 6. Admin portal (admin/, Vite + React, needs Bun)
-Write-Host "[6/6] Checking admin portal (http://localhost:3001)..." -ForegroundColor Yellow
-$adminOnline = $false
-try {
-    $aRes = Invoke-WebRequest -Uri "http://localhost:3001" -UseBasicParsing -ErrorAction Stop
-    if ($aRes.StatusCode -eq 200) { $adminOnline = $true }
-} catch {}
-
-if (-not $adminOnline) {
-    $adminDir = Join-Path $PSScriptRoot "admin"
-    if (-not (Test-Path (Join-Path $adminDir "node_modules"))) {
-        Write-Host "Installing admin portal packages (first run only)..." -ForegroundColor Gray
-        Push-Location $adminDir; bun install; Pop-Location
-    }
-    Write-Host "Starting admin portal on port 3001..." -ForegroundColor Gray
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-Command", "bun run dev" -WorkingDirectory $adminDir -WindowStyle Minimized
-    Start-Sleep -Seconds 3
-}
-Write-Host "[OK] Admin portal is RUNNING at http://localhost:3001" -ForegroundColor Green
-
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "SUCCESS: AuthentiQ System is fully operational!" -ForegroundColor Cyan
 Write-Host "Website:       http://localhost:3000" -ForegroundColor White
-Write-Host "Admin portal:  http://localhost:3001" -ForegroundColor White
+Write-Host "Team console:  Website -> Manufacturers -> Log in with the admin account" -ForegroundColor White
 Write-Host "API Gateway:   http://127.0.0.1:8000" -ForegroundColor White
 Write-Host "API docs:      http://127.0.0.1:8000/api/docs" -ForegroundColor White
 Write-Host "Blockchain:    http://127.0.0.1:8545 (Chain ID: 1337)" -ForegroundColor White

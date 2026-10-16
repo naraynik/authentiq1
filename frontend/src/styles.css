@@ -32,6 +32,8 @@
   --color-genuine-soft: #e3f4ec;
   --color-fake: #c9302a;
   --color-fake-soft: #fbe9e7;
+  --color-warn: #9a6a00;
+  --color-warn-soft: #fbf1d6;
   --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 }

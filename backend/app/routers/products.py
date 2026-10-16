@@ -206,6 +206,12 @@ async def register_product(
         product.is_onchain = True
         product.registration_tx_hash = tx_result.get("transaction_hash")
         product.registration_block = tx_result.get("block_number")
+        from app.services.audit import create_audit_log
+        create_audit_log(
+            db=db, action="PRODUCT_REGISTERED", entity_type="PRODUCT", entity_id=product.product_id,
+            user_id=current_user.id,
+            description=f"{mfr.company_name} registered '{product.product_name}' ({product.product_id}) on the blockchain, block {product.registration_block}.",
+        )
         db.commit()
         db.refresh(product)
     except Exception as e:

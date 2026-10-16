@@ -23,7 +23,8 @@ TanStack Start + Vite + React 19 + Tailwind CSS v4, TypeScript (strict), three.j
 | `src/lib/api.ts` | **Every backend call**, the API address, and the plain-language text for the AI flags. |
 | `src/lib/samples.ts` | The `Product` type the pages show, and the two built-in sample reports. |
 | `src/components/ScanPage.tsx` | Scan QR / enter product ID, scan report, raise an issue, sample reports. |
-| `src/components/ManufacturerPage.tsx` | Register / log in, verification status, product registration form, registered products. |
+| `src/components/ManufacturerPage.tsx` | Register / log in, verification status, product registration form, registered products. An ADMIN login here opens the team console instead. |
+| `src/components/TeamConsole.tsx` + `src/lib/adminApi.ts` | The AuthentiQ team's console: stats, manufacturer verification (document viewer, approve, reject with reason, suspend / reactivate), customer issues, audit log. Not linked anywhere. |
 | `src/routes/index.tsx` | Landing page + the hash-based page switcher (`App`) at the bottom. |
 | `src/components/GlobeDemo.tsx` | Landing-page globe demo (marketing only, no backend). |
 | `src/components/Shell.tsx` | Logo, header/footer of the inner pages, shared button and card classes. |
@@ -36,7 +37,7 @@ TanStack Start + Vite + React 19 + Tailwind CSS v4, TypeScript (strict), three.j
 | Scan / enter a code | `POST /api/verify/report` |
 | Raise an issue | `POST /api/issues` |
 | Register as manufacturer | `POST /api/auth/manufacturer/register` (multipart; file field `verification_document`) |
-| Log in | `POST /api/auth/login` (only `MANUFACTURER` accounts; token stored in `localStorage`) |
+| Log in | `POST /api/auth/login` (manufacturer → their dashboard, admin → team console; session stored in `localStorage`) |
 | Verification status | `GET /api/manufacturer/profile` |
 | Add products | `POST /api/products/register`, one per product |
 | Registered products | `GET /api/products/mine` |

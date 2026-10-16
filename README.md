@@ -1,15 +1,14 @@
 # AuthentiQ
 
-AuthentiQ is a product authentication system. Manufacturers store their products on a blockchain together with their distributor addresses. A customer scans the QR code on a product and gets a scan report. AI models raise an anomaly when the same code is scanned in places too far apart for the time between scans (a copied code), or far away from every distributor the manufacturer registered. The customer can raise an issue from the report, and the AuthentiQ team handles it in the admin portal.
+AuthentiQ is a product authentication system. Manufacturers store their products on a blockchain together with their distributor addresses. A customer scans the QR code on a product and gets a scan report. AI models raise an anomaly when the same code is scanned in places too far apart for the time between scans (a copied code), or far away from every distributor the manufacturer registered. The customer can raise an issue from the report, and the AuthentiQ team handles it in the team console.
 
 | Folder | What it is |
 |---|---|
-| `frontend/` | The website: landing page, **Scan a product**, **Manufacturers** (register, verification status, add products). |
-| `admin/` | The **admin portal** for the AuthentiQ team: verify manufacturers (view GSTIN and Aadhaar card, approve / reject / suspend), handle customer issues, see all products and scan numbers. |
+| `frontend/` | The website: landing page, **Scan a product**, **Manufacturers** (register, verification status, add products). The AuthentiQ team's **console** is part of it too, but has no link or page of its own: logging in on **Manufacturers → Log in** with the admin account opens it (stats, verify manufacturers with their Aadhaar card, approve / reject with reason / suspend, customer issues, audit log). |
 | `backend/` | FastAPI API: accounts, products, scans, AI models (Random Forest + GNN), blockchain, customer issues. PostgreSQL database. |
 | `blockchain/` | The `ProductVerification` smart contract (Solidity, Hardhat). |
 | `ai-engine/` | Training code for the AI models (the trained models are in `backend/app/models/`). |
-| `deploy/` | nginx config and the Dockerfile that builds the website + admin portal. |
+| `deploy/` | nginx config and the Dockerfile that builds the website. |
 
 What changed in this version: [CHANGES.md](CHANGES.md).
 
@@ -20,7 +19,6 @@ What changed in this version: [CHANGES.md](CHANGES.md).
 ```
 Browser ──> web (nginx)
               ├─ /          website
-              ├─ /admin/    admin portal
               └─ /api/  ──> backend (FastAPI + AI models)
                               ├─> db     PostgreSQL 16   (accounts, products, scans, issues)
                               └─> chain  Ganache          (ProductVerification contract)
@@ -34,7 +32,7 @@ Browser ──> web (nginx)
 
 ## Put it online for free (recommended)
 
-**Follow [DEPLOY-RENDER.md](DEPLOY-RENDER.md).** It uses Render for the API, website and admin portal (set up from `render.yaml` in one go), Neon for the database and the public Sepolia test blockchain, so every product record can be looked up on Etherscan. It takes about 45 minutes, all in the browser, with no Docker and no command line.
+**Follow [DEPLOY-RENDER.md](DEPLOY-RENDER.md).** It uses Render for the API and website (set up from `render.yaml` in one go), Neon for the database and the public Sepolia test blockchain, so every product record can be looked up on Etherscan. It takes about 45 minutes, all in the browser, with no Docker and no command line.
 
 ## Deploy on your own server with Docker
 
@@ -52,7 +50,7 @@ docker compose up -d --build
 Then open:
 
 - Website: `http://<server>/`
-- Admin portal: `http://<server>/admin/` (log in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
+- Team console: on the website, **Manufacturers → Log in** with `ADMIN_EMAIL` / `ADMIN_PASSWORD`
 
 ### HTTPS (needed for the camera on phones)
 
@@ -82,7 +80,7 @@ Backups: `docker compose exec db pg_dump -U authentiq authentiq > backup.sql`, p
 **Easiest (one click):** install [Docker Desktop](https://www.docker.com/products/docker-desktop/), open it once, then double-click **`START-AUTHENTIQ.bat`** in the project folder. The first time it creates `.env` with new passwords, saves the admin login in `ADMIN-LOGIN.txt`, builds everything (5–15 minutes the first time) and opens:
 
 - Website: http://localhost:8080/
-- Admin portal: http://localhost:8080/admin/
+- Team console: http://localhost:8080/#/manufacturer → **Log in** with the login in `ADMIN-LOGIN.txt` (admin@authentiq.com)
 - API docs: http://localhost:8080/api/docs
 - Database viewer: http://localhost:8081
 
@@ -99,7 +97,6 @@ copy .env.example .env            # set DATABASE_URL, ADMIN_PASSWORD, ...
 python -m app.seed_admin
 cd ..\blockchain; npm install
 cd ..\frontend;   bun install
-cd ..\admin;      bun install
 ```
 
 And each time: `.\start-project.ps1` (stop with `.\stop-project.ps1`). Or by hand, each in its own window:
@@ -108,7 +105,6 @@ And each time: `.\start-project.ps1` (stop with `.\stop-project.ps1`). Or by han
 cd blockchain; npm run chain:start                                    # blockchain on :8545
 cd backend;    venv\Scripts\activate; python -m uvicorn app.main:app --reload --port 8000
 cd frontend;   bun run dev --port 3000                                # website   http://localhost:3000
-cd admin;      bun run dev                                            # admin     http://localhost:3001
 ```
 
 The backend's `BLOCKCHAIN_PRIVATE_KEY` must be an account that has funds on that chain (for `npm run chain:start`, the first account of its mnemonic). The contract is deployed automatically if it is missing.
@@ -120,11 +116,11 @@ The backend's `BLOCKCHAIN_PRIVATE_KEY` must be an account that has funds on that
 ## Try the whole flow
 
 1. **Website → Manufacturers → Register.** GSTIN must be a valid format (e.g. `27AAACA1234A1Z5`). Password: 8+ characters with upper case, lower case, a number and a symbol. Upload a PDF/PNG/JPG under 5 MB as the Aadhaar card. You see **Verification pending**.
-2. **Admin portal → Verification.** Open **View Aadhaar card**, then **Approve** (or **Reject** with a reason, which the manufacturer sees).
+2. **Manufacturers → Log in** with the admin account opens the team console. Open **View document**, then **Approve** (or **Reject** with a reason, which the manufacturer sees).
 3. **Website** → **Check status again** → fill in a distributor (with coordinates, e.g. `20.0050, 73.7600`), the facility and the products → **Submit registration**. Each product gets a code to put in its QR.
 4. **Website → Scan a product → Enter product ID** with that code → **No anomaly found**.
 5. Scan the same code again from far away (Chrome DevTools → More tools → Sensors → Location → London, then **Share my location**) → **Anomaly raised**.
-6. **Raise an issue** on the report → it appears in **Admin portal → Customer issues**.
+6. **Raise an issue** on the report → it appears in the team console under **Customer issues**.
 
 The **sample reports** (True product / False product) on the scan page are built into the website.
 
@@ -149,7 +145,7 @@ Open http://localhost:8081 (on a remote server, first run `ssh -L 8081:127.0.0.1
 | `issues` | Problems customers raised from a scan report |
 | `location_history`, `audit_logs` | Product route updates, and every admin decision (who approved whom, when) |
 
-Adminer can also edit rows. Make changes through the admin portal or the API instead, so the blockchain and the database stay in step.
+Adminer can also edit rows. Make changes through the team console or the API instead, so the blockchain and the database stay in step.
 
 **API (interactive docs).** http://localhost/api/docs (or http://127.0.0.1:8000/api/docs when running the backend by hand) lists every endpoint and lets you try them: press **Authorize**, paste a token from `POST /api/auth/login`, then **Try it out**.
 
